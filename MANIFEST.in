@@ -1,0 +1,16 @@
+recursive-include channel *
+include *.txt
+include *.rst
+include *.md
+include *.py
+include LICENSE
+include development.cfg
+include main.cfg
+include production.cfg
+include versions.cfg
+
+exclude channel/bot/settings.py
+exclude last_post.txt
+global-exclude *.pyc
+global-exclude ._*
+global-exclude *.mo
