@@ -7,10 +7,11 @@ from channel.bot.bot import my_bot
 from channel.bot.commands import BaseCommand
 from channel.bot.models import ChannelSettings, UserSettings
 from channel.bot.utils import build_menu
+from channel.bot.filters import Filters as OwnFilters
 
 
 class ChannelManager(BaseCommand):
-    @BaseCommand.command_wrapper(MessageHandler, run_async=True, filters=Filters.forwarded)
+    @BaseCommand.command_wrapper(MessageHandler, run_async=True, filters=Filters.forwarded & (~ OwnFilters.channel))
     def add_channel(self):
         possible_channel = self.message.forward_from_chat
 
@@ -53,7 +54,7 @@ class ChannelManager(BaseCommand):
 
         self.user_settings.current_channel = None
         self.user_settings.state = UserSettings.IDLE
-        buttons = build_menu('Captions', 'Settings')
+        buttons = build_menu('Captions', 'Settings', footer_buttons=['Cancel current action'])
         self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
 
     def channel_selector_menu(self, user: UserSettings, prefix: str,
@@ -154,11 +155,11 @@ class ChannelManager(BaseCommand):
         self.message.reply_text(f'The caption was set to:\n{self.message.text}')
         self.start()
 
-    @BaseCommand.command_wrapper(MessageHandler, filters=Filters.text)
+    @BaseCommand.command_wrapper(MessageHandler, filters=Filters.text & (~ OwnFilters.channel))
     def text_message_dispatcher(self):
         try:
             state = self.user_settings.state
-            if self.message.text.lower() in ['cancel', 'home']:
+            if self.message.text.lower() in ['cancel', 'home', 'cancel current action']:
                 self.start()
             elif not state or state == UserSettings.IDLE:
                 if self.message.text.lower() == 'captions':

@@ -15,7 +15,7 @@ class BaseCommand:
     message: Message
     update: Update
     bot: Bot
-    user_settings: UserSettings
+    user_settings: UserSettings or None
 
     def __init__(self, bot: Bot, update: Update, *args, **kwargs):
         self.user = update.effective_user
@@ -24,9 +24,11 @@ class BaseCommand:
         self.update = update
         self.bot = my_bot.updater.bot
 
-        self.user_settings = my_bot.db_session.query(UserSettings).filter_by(user_id=self.user.id).first()
-        if not self.user_settings:
-            self.user_settings = BaseCommand.create_user_setting(self.user)
+        self.user_settings = None
+        if self.user:
+            self.user_settings = my_bot.db_session.query(UserSettings).filter_by(user_id=self.user.id).first()
+            if not self.user_settings:
+                self.user_settings = BaseCommand.create_user_setting(self.user)
 
     @staticmethod
     def command_wrapper(handler: Type[Handler] or Handler = None, names: str or List[str] = None,
