@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 from channel.bot.bot import my_bot
@@ -20,6 +20,9 @@ class UserSettings(my_bot.Base):
         secondary=association_user_setting_channel_settings,
         back_populates='users'
     )
+
+    current_channel_id = Column(Integer, ForeignKey('channel_settings.channel_id'))
+    current_channel = relationship('ChannelSettings')
 
     _state = Column(String(100))
 

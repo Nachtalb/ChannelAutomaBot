@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from telegram import Bot, Update, User
-from telegram.ext import CommandHandler, Filters, Handler, Updater, messagequeue, MessageHandler
+from telegram.ext import CommandHandler, Filters, Handler, Updater, messagequeue, MessageHandler, CallbackQueryHandler
 from telegram.utils.request import Request
 
 from channel.bot import settings
@@ -106,6 +106,8 @@ class MyBot:
             self.updater.dispatcher.add_handler(handler=handler)
         elif handler == MessageHandler:
             self.updater.dispatcher.add_handler(handler=handler(kwargs.get('filters', Filters.all), func))
+        elif handler == CallbackQueryHandler:
+            self.updater.dispatcher.add_handler(handler=handler(func, **kwargs))
         else:
             if not names:
                 names = [func.__name__]
