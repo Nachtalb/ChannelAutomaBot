@@ -1,5 +1,5 @@
-from telegram import Chat, ChatMember, ReplyKeyboardMarkup
-from telegram.ext import MessageHandler
+from telegram import Chat, ChatMember
+from telegram.ext import Filters, MessageHandler
 
 from channel.bot.bot import my_bot
 from channel.bot.commands import BaseCommand
@@ -27,18 +27,18 @@ class Channel(BaseCommand):
             self.message.reply_text('You must be an admin yourself to use me.')
         else:
             channel = my_bot.db_session.query(ChannelSettings).filter_by(channel_id=possible_channel.id).first()
-            if not channel:
-                channel = ChannelSettings(channel_id=possible_channel.id, added_by=self.user.id)
-                my_bot.db_session.add(channel)
-                my_bot.db_session.commit()
-                self.message.reply_text('Channel was added')
-            else:
-                self.message.reply_text('Channel already added')
 
-    @BaseCommand.command_wrapper(names=['start', 'reset'])
-    def start(self):
-        buttons = [
-            ['Caption', ],
-            ['Settings', ]
-        ]
-        self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
+            message = 'Channel was updated'
+            if not channel:
+                channel = ChannelSettings(channel_id=possible_channel.id,
+                                          added_by=self.user.id,
+                                          users=[self.user_settings])
+                my_bot.db_session.add(channel)
+                message = 'Channel was added'
+            elif self.user_settings not in channel.users:
+                channel.users.append(self.user_settings)
+                message = 'Channel was added'
+
+            channel.update_from_chat(possible_channel)
+            my_bot.db_session.commit()
+            self.message.reply_text(message)
