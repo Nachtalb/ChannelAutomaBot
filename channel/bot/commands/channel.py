@@ -1,3 +1,5 @@
+from typing import List
+
 from telegram import Chat, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
 
@@ -49,27 +51,76 @@ class Channel(BaseCommand):
         if 'cancel' in self.message.text and self.user_settings.state != UserSettings.IDLE:
             self.message.reply_text('Current action was cancelled')
 
+        self.user_settings.current_channel = None
         self.user_settings.state = UserSettings.IDLE
         buttons = build_menu('Captions', 'Settings')
         self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
 
-    def channel_selector_menu(self, user: UserSettings, prefix: str) -> InlineKeyboardMarkup or None:
+    def channel_selector_menu(self, user: UserSettings, prefix: str,
+                              header_buttons: List[InlineKeyboardButton] = None,
+                              footer_buttons: List[InlineKeyboardButton] = None) -> InlineKeyboardMarkup or None:
         if not user.channels:
             return
         buttons = []
         for channel in user.channels:
             buttons.append(InlineKeyboardButton(channel.name, callback_data=f'{prefix}:{channel.channel_id}'))
-        return InlineKeyboardMarkup(build_menu(*buttons))
+        return InlineKeyboardMarkup(build_menu(*buttons, header_buttons=header_buttons, footer_buttons=footer_buttons))
 
     def caption_menu(self):
-        self.user_settings.state = UserSettings.SET_CAPTION_MENU
         menu = self.channel_selector_menu(self.user_settings, 'change_caption')
         if not menu:
             self.message.reply_text('No channels added yet. To add one forward any message from that channel.')
             return
 
-        self.message.reply_text('For which channel do you want to set a new Caption?',
-                                reply_markup=self.channel_selector_menu(self.user_settings, 'change_caption'))
+        self.user_settings.state = UserSettings.SET_CAPTION_MENU
+        self.message.reply_text('For which channel do you want to set a new Caption?', reply_markup=menu)
+
+    def settings_menu(self):
+        footer_buttons = [InlineKeyboardButton('Update Channels', callback_data='update_channels'),
+                          InlineKeyboardButton('Back', callback_data='cancel')]
+        menu = self.channel_selector_menu(self.user_settings, 'change_settings_menu', footer_buttons=footer_buttons)
+
+        if not menu:
+            self.message.reply_text('No channels added yet. To add one forward any message from that channel.')
+            return
+
+        self.user_settings.state = UserSettings.SETTINGS_MENU
+        self.message.reply_text('What do you want to do?', reply_markup=menu)
+
+    @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^update_channels$')
+    def update_channels(self):
+        for channel in self.user_settings.channels:
+            channel.update()
+        my_bot.db_session.commit()
+        self.message.reply_text('Channels updated')
+        self.message.delete()
+        self.start()
+
+    @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^change_settings_menu:.*$')
+    def channel_settings_menu(self):
+        channel_id = int(self.update.callback_query.data.split(':')[1])
+        self.message.delete()
+
+        self.user_settings.current_channel_id = channel_id
+        self.user_settings.state = UserSettings.CHANNEL_SETTINGS_MENU
+
+        buttons = ReplyKeyboardMarkup(build_menu('Remove', 'Cancel'))
+
+        self.message.reply_text(f'Settings for {self.user_settings.current_channel.name}', reply_markup=buttons)
+
+    def remove_channel_confirm_dialog(self):
+        self.user_settings.state = UserSettings.PRE_REMVOE_CHANNEL
+        self.message.reply_text(f'Are you sure you want to remove: {self.user_settings.current_channel.name}?',
+                                reply_markup=ReplyKeyboardMarkup(build_menu('Yes', 'No')))
+
+    def remove_channel_confirmation(self):
+        if self.message.text.lower() == 'yes':
+            self.user_settings.channels.remove(self.user_settings.current_channel)
+            self.message.reply_text('Channel was removed')
+        elif self.message.text.lower() != 'no':
+            self.message.reply_text('Either hit yes or no')
+            return
+        self.start()
 
     @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^change_caption:.*$')
     def pre_set_caption(self):
@@ -89,6 +140,11 @@ class Channel(BaseCommand):
         self.message.reply_text(f'Now send me the caption you want to have for your channel. Markdown and HTML are '
                                 f'not yet supported.\n\nCurrent Caption:\n{self.user_settings.current_channel.caption}')
 
+    @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^(home|cancel)$')
+    def pre_set_caption(self):
+        self.message.delete()
+        self.start()
+
     def set_caption(self):
         if not self.message.text:
             self.message.reply_text('You have to send me some text.')
@@ -102,11 +158,20 @@ class Channel(BaseCommand):
     def text_message_dispatcher(self):
         try:
             state = self.user_settings.state
-            if not state or state == UserSettings.IDLE:
+            if self.message.text.lower() in ['cancel', 'home']:
+                self.start()
+            elif not state or state == UserSettings.IDLE:
                 if self.message.text.lower() == 'captions':
                     self.caption_menu()
+                if self.message.text.lower() == 'settings':
+                    self.settings_menu()
             elif state == UserSettings.SET_CAPTION:
                 self.set_caption()
+            elif state == UserSettings.CHANNEL_SETTINGS_MENU:
+                if self.message.text.lower() == 'remove':
+                    self.remove_channel_confirm_dialog()
+            elif state == UserSettings.PRE_REMVOE_CHANNEL:
+                self.remove_channel_confirmation()
         except Exception as error:
             self.message.reply_text('Something went wrong')
             self.start()

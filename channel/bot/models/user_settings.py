@@ -9,8 +9,11 @@ class UserSettings(my_bot.Base):
     IDLE = 'idle'
     SET_CAPTION_MENU = 'set caption menu'
     SET_CAPTION = 'set caption'
+    SETTINGS_MENU = 'settings menu'
+    CHANNEL_SETTINGS_MENU = 'channel settings menu'
+    PRE_REMVOE_CHANNEL = 'pre remove channel'
 
-    STATES = (IDLE, SET_CAPTION_MENU, SET_CAPTION)
+    STATES = (IDLE, SET_CAPTION_MENU, SET_CAPTION, SETTINGS_MENU, CHANNEL_SETTINGS_MENU, PRE_REMVOE_CHANNEL)
 
     __tablename__ = 'user_settings'
 
