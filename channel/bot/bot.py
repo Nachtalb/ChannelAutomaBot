@@ -92,7 +92,8 @@ class MyBot:
     def me(self) -> User:
         return self.updater.bot.get_me()
 
-    def add_command(self, handler: Type[Handler] or Handler = None, name: str = None, func: Callable = None, admins_only: bool=False, **kwargs):
+    def add_command(self, handler: Type[Handler] or Handler = None, names: str or List[str] = None,
+                    func: Callable = None, admins_only: bool = False, **kwargs):
         handler = handler or CommandHandler
         if admins_only:
             admin_filter = Filters.user(username=self.admins)
@@ -106,7 +107,14 @@ class MyBot:
         elif handler == MessageHandler:
             self.updater.dispatcher.add_handler(handler=handler(kwargs.get('filters', Filters.all), func))
         else:
-            self.updater.dispatcher.add_handler(handler=handler(name, func, **kwargs))
+            if not names:
+                names = [func.__name__]
+            elif not isinstance(names, List):
+                names = [names]
+
+            for name in names:
+
+                self.updater.dispatcher.add_handler(handler=handler(name, func, **kwargs))
 
     def stop_and_restart(self, chat_id):
         """Gracefully stop the Updater and replace the current process with a new one.
