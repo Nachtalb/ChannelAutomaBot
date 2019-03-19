@@ -4,16 +4,14 @@ import sys
 from threading import Thread
 from typing import Callable, List, Type
 
-from telegram import Bot, Update, User
-from telegram.ext import CommandHandler, Filters, Handler, Updater, messagequeue
-from telegram.utils.request import Request
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from telegram import Bot, Update, User
+from telegram.ext import CommandHandler, Filters, Handler, Updater, messagequeue, MessageHandler
+from telegram.utils.request import Request
 
 from channel.bot import settings
-
-
 from .settings import ADMINS, LOG_LEVEL, MODE, TELEGRAM_API_TOKEN
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
@@ -66,7 +64,7 @@ class MyBot:
 
         self.updater = Updater(bot=bot)
 
-        self.add_command(name='restart', func=self.restart, admins_only=True)
+        self.add_command(func=self.restart, admins_only=True)
 
         self.log_self()
         self.send_message_if_reboot()
@@ -105,6 +103,8 @@ class MyBot:
 
         if isinstance(handler, Handler):
             self.updater.dispatcher.add_handler(handler=handler)
+        elif handler == MessageHandler:
+            self.updater.dispatcher.add_handler(handler=handler(kwargs.get('filters', Filters.all), func))
         else:
             self.updater.dispatcher.add_handler(handler=handler(name, func, **kwargs))
 
