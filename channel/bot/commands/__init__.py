@@ -25,7 +25,8 @@ class BaseCommand:
             self.user_settings = BaseCommand.create_user_setting(self.user)
 
     @staticmethod
-    def command_wrapper(handler: Type[Handler] or Handler = None, name: str = None, run_async: bool = False, **kwargs):
+    def command_wrapper(handler: Type[Handler] or Handler = None, name: str = None, run_async: bool = False,
+                        admins_only: bool = None, **kwargs):
         def outer_wrapper(func):
             @wraps(func)
             def wrapper(bot: Bot, update: Update, *inner_args, **inner_kwargs):
@@ -45,11 +46,10 @@ class BaseCommand:
                 else:
                     func(*_args, **_kwargs)
 
-            my_bot.add_command(handler=handler, name=name, func=wrapper, **kwargs)
+            my_bot.add_command(handler=handler, name=name, func=wrapper, admins_only=admins_only, **kwargs)
             return wrapper
 
         return outer_wrapper
-
 
     @staticmethod
     def create_user_setting(user: User) -> UserSettings:

@@ -66,7 +66,7 @@ class MyBot:
 
         self.updater = Updater(bot=bot)
 
-        self.add_command(name='restart', func=self.restart)
+        self.add_command(name='restart', func=self.restart, admins_only=True)
 
         self.log_self()
         self.send_message_if_reboot()
@@ -94,9 +94,14 @@ class MyBot:
     def me(self) -> User:
         return self.updater.bot.get_me()
 
-    def add_command(self, handler: Type[Handler] or Handler = None, name: str = None, func: Callable = None, **kwargs):
+    def add_command(self, handler: Type[Handler] or Handler = None, name: str = None, func: Callable = None, admins_only: bool=False, **kwargs):
         handler = handler or CommandHandler
-        kwargs.setdefault('filters', Filters.user(username=self.admins))
+        if admins_only:
+            admin_filter = Filters.user(username=self.admins)
+            if 'filters' in kwargs:
+                kwargs['filters'] = kwargs['filters'] & admin_filter
+            else:
+                kwargs['filters'] = admin_filter
 
         if isinstance(handler, Handler):
             self.updater.dispatcher.add_handler(handler=handler)
