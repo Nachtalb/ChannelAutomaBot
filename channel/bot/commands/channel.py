@@ -1,9 +1,10 @@
-from telegram import Chat, ChatMember
+from telegram import Chat, ChatMember, ReplyKeyboardMarkup
 from telegram.ext import Filters, MessageHandler
 
 from channel.bot.bot import my_bot
 from channel.bot.commands import BaseCommand
-from channel.bot.models import ChannelSettings
+from channel.bot.models import ChannelSettings, UserSettings
+from channel.bot.utils import build_menu
 
 
 class Channel(BaseCommand):
@@ -42,3 +43,9 @@ class Channel(BaseCommand):
             channel.update_from_chat(possible_channel)
             my_bot.db_session.commit()
             self.message.reply_text(message)
+
+    @BaseCommand.command_wrapper(names=['start', 'reset'])
+    def start(self):
+        self.user_settings.state = UserSettings.IDLE
+        buttons = build_menu('Captions', 'Settings')
+        self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
