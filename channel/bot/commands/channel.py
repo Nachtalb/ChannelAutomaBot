@@ -49,3 +49,20 @@ class Channel(BaseCommand):
         self.user_settings.state = UserSettings.IDLE
         buttons = build_menu('Captions', 'Settings')
         self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
+
+    def caption_menu(self):
+        self.user_settings.state = UserSettings.SET_CAPTION_MENU
+        buttons = build_menu(*map(lambda channel: channel.name, self.user_settings.channels))
+        self.message.reply_text('For which channel do you want to set a new Caption?',
+                                reply_markup=ReplyKeyboardMarkup(buttons))
+
+    @BaseCommand.command_wrapper(MessageHandler, filters=Filters.text)
+    def text_message_dispatcher(self):
+        try:
+            if not self.user_settings.state or self.user_settings.state == UserSettings.IDLE:
+                if self.message.text.lower() == 'captions':
+                    self.caption_menu()
+        except Exception as error:
+            self.message.reply_text('Something went wrong')
+            self.start()
+            raise error

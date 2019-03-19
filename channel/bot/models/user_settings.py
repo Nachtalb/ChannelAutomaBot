@@ -7,8 +7,10 @@ from channel.bot.models.associations import association_user_setting_channel_set
 
 class UserSettings(my_bot.Base):
     IDLE = 'idle'
+    SET_CAPTION_MENU = 'set caption menu'
+    SET_CAPTION = 'set caption'
 
-    STATES = (IDLE, )
+    STATES = (IDLE, SET_CAPTION_MENU, SET_CAPTION)
 
     __tablename__ = 'user_settings'
 
