@@ -256,7 +256,7 @@ pip-selfcheck.json
 
 
 ### Bot
-settings.py
+*/*/settings.py
 .idea/
 buildout.cfg
 src/
