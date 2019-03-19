@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Type
+from typing import Type, List
 
 from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import Handler, run_async as run_async_method
@@ -33,17 +33,20 @@ class BaseCommand:
                         admins_only: bool = None, **kwargs):
         def outer_wrapper(func):
             @wraps(func)
-            def wrapper(bot: Bot, update: Update, *inner_args, **inner_kwargs):
+            def wrapper(*inner_args, **inner_kwargs):
                 method_class = get_class_that_defined_method(func)
 
-                _args, _kwargs = [], {}
+                if (inner_args and isinstance(inner_args[0], method_class)) \
+                        or not (len(inner_args) > 1
+                                and isinstance(inner_args[0], Bot)
+                                and isinstance(inner_args[1], Update)):
+                    return func(*inner_args, **inner_kwargs)
+
+                _args, _kwargs = inner_args, inner_kwargs
                 if method_class and BaseCommand in method_class.__bases__:
-                    instance = method_class(bot, update, *inner_args, **inner_kwargs)
+                    instance = method_class(*inner_args, **inner_kwargs)
                     _args = [instance]
-                else:
-                    _args.extend([bot, update])
-                    _args.extend(inner_args)
-                    _kwargs = inner_kwargs
+                    _kwargs = {}
 
                 if run_async:
                     run_async_method(func(*_args, **_kwargs))
