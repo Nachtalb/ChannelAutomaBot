@@ -4,6 +4,8 @@ TELEGRAM_API_TOKEN = ''
 
 ADMINS = ['@USERNAME']
 
+DATABASE = 'sqlite:///channel_automa.sqlite'
+
 # More information about polling and webhooks can be found here:
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks
 MODE = {
