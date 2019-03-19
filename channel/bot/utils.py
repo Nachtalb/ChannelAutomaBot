@@ -1,6 +1,8 @@
 import inspect
 from typing import Callable, List, Type
 
+from telegram import Animation, Audio, Document, Message, PhotoSize, Video, Voice
+
 
 def get_class_that_defined_method(meth: Callable or Type) -> Type or None:
     """Get defining class of unbound method object
@@ -39,3 +41,14 @@ def build_menu(*buttons: any,
         menu.append(footer_buttons)
 
     return menu
+
+
+def is_media_message(msg: Message) -> bool:
+    media_types = tuple([Audio, Animation, Document, PhotoSize, Video, Voice])
+    attachment = msg.effective_attachment
+
+    is_media = isinstance(attachment, media_types)
+    if not is_media and isinstance(attachment, list) and attachment:
+        is_media = isinstance(attachment[0], media_types)
+
+    return is_media
