@@ -66,3 +66,4 @@ class BaseCommand:
 
 
 from . import settings
+from . import channel

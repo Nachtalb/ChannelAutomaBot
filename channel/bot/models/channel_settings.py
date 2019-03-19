@@ -7,5 +7,5 @@ class ChannelSettings(my_bot.Base):
     __tablename__ = 'channel_settings'
 
     channel_id = Column(Integer, primary_key=True)
-    channel_admin = Column(Integer)
+    added_by = Column(Integer)
     caption = Column(String(200))
