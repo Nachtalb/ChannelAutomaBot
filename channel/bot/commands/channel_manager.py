@@ -9,7 +9,7 @@ from channel.bot.models import ChannelSettings, UserSettings
 from channel.bot.utils import build_menu
 
 
-class Channel(BaseCommand):
+class ChannelManager(BaseCommand):
     @BaseCommand.command_wrapper(MessageHandler, run_async=True, filters=Filters.forwarded)
     def add_channel(self):
         possible_channel = self.message.forward_from_chat

@@ -69,4 +69,5 @@ class BaseCommand:
 
 
 from . import settings
-from . import channel
+from . import channel_manager
+from . import channel_actions
