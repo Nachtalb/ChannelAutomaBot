@@ -1,4 +1,4 @@
-from telegram import ChatMember, Chat
+from telegram import Chat, ChatMember, ReplyKeyboardMarkup
 from telegram.ext import MessageHandler
 
 from channel.bot.bot import my_bot
@@ -7,7 +7,7 @@ from channel.bot.models import ChannelSettings
 
 
 class Channel(BaseCommand):
-    @BaseCommand.command_wrapper(MessageHandler, run_async=True)
+    @BaseCommand.command_wrapper(MessageHandler, run_async=True, filters=Filters.forwarded)
     def add_channel(self):
         possible_channel = self.message.forward_from_chat
 
@@ -34,3 +34,11 @@ class Channel(BaseCommand):
                 self.message.reply_text('Channel was added')
             else:
                 self.message.reply_text('Channel already added')
+
+    @BaseCommand.command_wrapper(names=['start', 'reset'])
+    def start(self):
+        buttons = [
+            ['Caption', ],
+            ['Settings', ]
+        ]
+        self.message.reply_text('What do you want to do?', reply_markup=ReplyKeyboardMarkup(buttons))
