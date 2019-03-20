@@ -27,7 +27,7 @@ class ChannelManager(BaseCommand):
         user_member: ChatMember
         user_member = possible_channel.get_member(self.user.id)
 
-        if user_member.status != user_member.ADMINISTRATOR:
+        if user_member.status not in [user_member.ADMINISTRATOR, user_member.CREATOR]:
             self.message.reply_text('You must be an admin yourself to use me.')
         else:
             channel = my_bot.db_session.query(ChannelSettings).filter_by(channel_id=possible_channel.id).first()
@@ -128,7 +128,7 @@ class ChannelManager(BaseCommand):
         channel_id = int(self.update.callback_query.data.split(':')[1])
 
         member = self.bot.get_chat_member(chat_id=channel_id, user_id=self.user.id)
-        if not member.can_change_info:
+        if not member.can_change_info and not member.status == member.CREATOR:
             self.message.reply_text('You must have change channel info permissions to change the default caption.')
             return
 
