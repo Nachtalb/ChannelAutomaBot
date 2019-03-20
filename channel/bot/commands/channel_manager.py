@@ -144,7 +144,13 @@ class ChannelManager(BaseCommand):
         self.message.delete()
 
         self.message.reply_text(f'Now send me the caption you want to have for your channel. Markdown and HTML are '
-                                f'not yet supported.\n\nCurrent Caption:\n{self.user_settings.current_channel.caption}')
+                                f'not yet supported.\n\nCurrent Caption:\n{self.user_settings.current_channel.caption}',
+                                reply_markup=ReplyKeyboardMarkup(build_menu('Clear', 'Cancel')))
+
+    def clear_caption(self):
+        self.user_settings.current_channel.caption = None
+        self.message.reply_text('Caption cleared')
+        self.start()
 
     @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^(home|cancel)$')
     def pre_set_caption(self):
@@ -164,17 +170,21 @@ class ChannelManager(BaseCommand):
     def text_message_dispatcher(self):
         try:
             state = self.user_settings.state
-            if self.message.text.lower() in ['cancel', 'home', 'cancel current action']:
+            text = self.message.text.lower()
+            if text in ['cancel', 'home', 'cancel current action']:
                 self.start()
             elif not state or state == UserSettings.IDLE:
-                if self.message.text.lower() == 'captions':
+                if text == 'captions':
                     self.caption_menu()
-                if self.message.text.lower() == 'settings':
+                if text == 'settings':
                     self.settings_menu()
             elif state == UserSettings.SET_CAPTION:
-                self.set_caption()
+                if text == 'clear':
+                    self.clear_caption()
+                else:
+                    self.set_caption()
             elif state == UserSettings.CHANNEL_SETTINGS_MENU:
-                if self.message.text.lower() == 'remove':
+                if text == 'remove':
                     self.remove_channel_confirm_dialog()
             elif state == UserSettings.PRE_REMVOE_CHANNEL:
                 self.remove_channel_confirmation()
