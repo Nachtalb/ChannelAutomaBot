@@ -1,6 +1,6 @@
 from typing import List
 
-from telegram import Chat, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import Chat, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ParseMode
 from telegram.error import Unauthorized
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
 
@@ -143,9 +143,10 @@ class ChannelManager(BaseCommand):
         self.update.callback_query.answer()
         self.message.delete()
 
-        self.message.reply_text(f'Now send me the caption you want to have for your channel. Markdown and HTML are '
-                                f'not yet supported.\n\nCurrent Caption:\n{self.user_settings.current_channel.caption}',
-                                reply_markup=ReplyKeyboardMarkup(build_menu('Clear', 'Cancel')))
+        self.message.reply_text(f'Now send me the caption you want to have for your channel. \n\nCurrent Caption:\n'
+                                f'{self.user_settings.current_channel.caption}',
+                                reply_markup=ReplyKeyboardMarkup(build_menu('Clear', 'Cancel')),
+                                parse_mode=ParseMode.MARKDOWN)
 
     def clear_caption(self):
         self.user_settings.current_channel.caption = None
@@ -161,9 +162,9 @@ class ChannelManager(BaseCommand):
         if not self.message.text:
             self.message.reply_text('You have to send me some text.')
             return
-        self.user_settings.current_channel.caption = self.message.text
+        self.user_settings.current_channel.caption = self.message.text_markdown
         self.user_settings.state = UserSettings.IDLE
-        self.message.reply_text(f'The caption was set to:\n{self.message.text}')
+        self.message.reply_text(f'The caption was set to:\n{self.message.text_markdown}', parse_mode=ParseMode.MARKDOWN)
         self.start()
 
     @BaseCommand.command_wrapper(MessageHandler, filters=Filters.text & (~ OwnFilters.channel))
