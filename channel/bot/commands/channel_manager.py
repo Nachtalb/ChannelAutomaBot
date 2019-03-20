@@ -143,18 +143,19 @@ class ChannelManager(BaseCommand):
         self.update.callback_query.answer()
         self.message.delete()
 
-        self.message.reply_text(f'Now send me the caption you want to have for your channel. \n\nCurrent Caption:\n'
+        self.message.reply_text(f'Now send me the caption you want to have for your channel - '
+                                f'{self.user_settings.current_channel.name}. \n\nCurrent Caption:\n'
                                 f'{self.user_settings.current_channel.caption}',
                                 reply_markup=ReplyKeyboardMarkup(build_menu('Clear', 'Cancel')),
                                 parse_mode=ParseMode.MARKDOWN)
 
     def clear_caption(self):
         self.user_settings.current_channel.caption = None
-        self.message.reply_text('Caption cleared')
+        self.message.reply_text(f'Caption for {self.user_settings.current_channel.name} cleared')
         self.start()
 
     @BaseCommand.command_wrapper(CallbackQueryHandler, pattern='^(home|cancel)$')
-    def pre_set_caption(self):
+    def get_home(self):
         self.message.delete()
         self.start()
 
@@ -164,7 +165,8 @@ class ChannelManager(BaseCommand):
             return
         self.user_settings.current_channel.caption = self.message.text_markdown
         self.user_settings.state = UserSettings.IDLE
-        self.message.reply_text(f'The caption was set to:\n{self.message.text_markdown}', parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(f'The caption of {self.user_settings.current_channel.name} was set to:'
+                                f'\n{self.message.text_markdown}', parse_mode=ParseMode.MARKDOWN)
         self.start()
 
     @BaseCommand.command_wrapper(MessageHandler, filters=Filters.text & (~ OwnFilters.channel))
