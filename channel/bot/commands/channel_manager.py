@@ -1,6 +1,7 @@
 from typing import List
 
 from telegram import Chat, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram.error import Unauthorized
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
 
 from channel.bot.bot import my_bot
@@ -18,11 +19,15 @@ class ChannelManager(BaseCommand):
         if not possible_channel or possible_channel.type != Chat.CHANNEL or self.chat.type != Chat.PRIVATE:
             return
 
-        member: ChatMember
-        member = possible_channel.get_member(my_bot.me().id)
+        member: ChatMember or None
+        try:
+            member = possible_channel.get_member(my_bot.me().id)
+        except Unauthorized:
+            member = None
 
-        if member.status == member.LEFT:
+        if not member or member.status == member.LEFT:
             self.message.reply_text('I have to be a member of this chat to function')
+            return
 
         user_member: ChatMember
         user_member = possible_channel.get_member(self.user.id)
